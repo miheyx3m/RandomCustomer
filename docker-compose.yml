@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+#    volumes:
+#      - ./mysql/data:/var/lib/mysql
+#      - ./mysql/conf/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=adminadmin
+      - MYSQL_DATABASE=betcio
+    healthcheck:
+      test: ["CMD-SHELL", 'mysql ping']
+      interval: 20s
+      timeout: 2s
+      retries: 10
+  redis:
+    image: 'redis:3.2.11'
+    restart: always
+    hostname: redis
+    container_name: redis
+    ports:
+      - '6379:6379'
+    command: redis-server --requirepass admin
+  apprandom:
+    image: betc.io/random-customers
+    container_name: apprandom-customers
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/betcio?useSSL=false
+    depends_on:
+      - mysql
+  appredis:
+    image: betc.io/micro-redis
+    container_name: appmicro-redis
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/betcio?useSSL=false
+      HOSTNAME_REDIS: redis
+    depends_on:
+      - mysql
+      - redis
+    links:
+      - "redis:localhost"
